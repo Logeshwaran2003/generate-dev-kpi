@@ -1,29 +1,30 @@
 {
     "name": "generate-dev-kpi",
-    "version": "1.0.0",
-    "description": "Slack bot for tracking development builds and generating analytics",
+    "version": "0.1.0",
+    "description": "",
     "main": "app.js",
     "scripts": {
-      "start": "node app.js",
-      "dev": "nodemon app.js",
-      "test": "jest"
+      "test": "npm test"
     },
+    "keywords": [],
+    "author": "",
+    "license": "ISC",
     "dependencies": {
-      "@google/generative-ai": "^0.1.0",
+      "@google/generative-ai": "^0.24.0",
+      "@slack/bolt": "^4.2.1",
       "@slack/events-api": "^3.0.1",
-      "@slack/web-api": "^6.8.1",
+      "@slack/web-api": "^7.9.0",
+      "canvas": "^3.1.0",
+      "chart.js": "^3.9.1",
       "chartjs-node-canvas": "^4.1.6",
-      "docx": "^8.0.0",
-      "dotenv": "^16.0.3",
-      "express": "^4.18.2",
-      "moment": "^2.29.4",
-      "mongoose": "^6.10.0"
+      "docx": "^9.3.0",
+      "dotenv": "^16.4.7",
+      "express": "^4.21.2",
+      "moment": "^2.30.1",
+      "mongoose": "^8.12.1"
     },
     "devDependencies": {
-      "jest": "^29.5.0",
-      "nodemon": "^2.0.22"
-    },
-    "engines": {
-      "node": ">=16.0.0"
+      "nodemon": "^3.1.9"
     }
   }
+  
