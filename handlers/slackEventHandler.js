@@ -4,6 +4,7 @@ const documentService = require('../services/documentService');
 const analyticsService = require('../services/analyticsService');
 const chartService = require('../services/chartService');
 const messageParser = require('../utils/messageParser');
+const fs = require('fs');
 
 /**
  * Handle incoming Slack messages
