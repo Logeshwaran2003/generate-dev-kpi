@@ -24,8 +24,8 @@ This Slack bot automatically tracks development tasks, defects, and generates an
 
 1. Clone the repository:
    ```
-   git clone https://github.com/yourusername/slack-kpi-bot.git
-   cd slack-kpi-bot
+   git clone https://github.com/Logeshwaran2003/generate-dev-kpi/.git
+   cd generate-dev-kpi
    ```
 
 2. Install dependencies:
@@ -55,7 +55,7 @@ This Slack bot automatically tracks development tasks, defects, and generates an
 ### Starting the Bot
 
 ```
-node index.js
+node app.js
 ```
 
 ### Task Tracking Format
