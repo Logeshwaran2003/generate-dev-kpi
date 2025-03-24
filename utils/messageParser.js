@@ -3,9 +3,20 @@
  * @param {string} message - The message to parse
  * @returns {string|null} - The extracted task name or null if not found
  */
+
 function extractTaskName(message) {
     const lines = message.split('\n');
-    const devBuildIndex = lines.findIndex(line => line.toLowerCase().trim() === 'dev build');
+    
+    // Find index of any line containing the variations of dev build
+    const devBuildIndex = lines.findIndex(line => {
+        const trimmedLower = line.toLowerCase().trim();
+        return trimmedLower === 'dev build' || 
+               trimmedLower === 'dev build:' || 
+               trimmedLower === 'development build' || 
+               trimmedLower === 'development build:';
+    });
+    
+    // Extract the task name if found
     return devBuildIndex >= 0 && devBuildIndex + 1 < lines.length ? 
         lines[devBuildIndex + 1].split(' - ')[0].trim() : null;
 }
@@ -15,33 +26,15 @@ function extractTaskName(message) {
  * @param {string} message - The message to parse
  * @returns {string[]} - Array of extracted defect IDs
  */
+
 function extractDefectIDs(message) {
-    // Look specifically for defects in the format (D1234) or after the phrase "defects" or "Defects"
-    const defectsSection = message.match(/(?:defects|Defects).*?(?:\(([^)]+)\)|:[\s]*(.+?)(?:\.|$))/i);
+    // Extract all defect IDs in the format "D1234" appearing anywhere in the message
+    const defectMatches = message.match(/\b[Dd][-\s]?\d+\b/g);
     
-    if (defectsSection) {
-        // Get the content within parentheses or after colon
-        const defectContent = defectsSection[1] || defectsSection[2];
-        
-        // Extract individual defect IDs
-        const defectMatches = defectContent.match(/\b[Dd][-\s]?\d+\b/g);
-        
-        if (defectMatches) {
-            // Normalize defect IDs to the format "D1234"
-            return [...new Set(defectMatches.map(d => {
-                const num = d.match(/\d+/)[0];
-                return `D${num}`;
-            }))];
-        }
-    }
-    
-    // If no defects section found, fallback to searching for defect IDs in general
-    // but only in specific contexts to avoid false positives
-    const individualDefects = message.match(/(?:defect|Defect|issue|Issue|bug|Bug)[\s:]*\b([Dd][-\s]?\d+)\b/g);
-    
-    if (individualDefects) {
-        return [...new Set(individualDefects.map(d => {
-            const num = d.match(/\d+/)[0];
+    if (defectMatches) {
+        // Normalize defect IDs to the format "D1234"
+        return [...new Set(defectMatches.map(d => {
+            const num = d.match(/\d+/)[0];  // Extract just the number
             return `D${num}`;
         }))];
     }
