@@ -11,43 +11,69 @@ async function handleFiltersCommand(req, res) {
     try {
         const { text, channel_id } = req.body;
 
+        // Early return for clear command
         if (text === 'clear') {
             const responseMessage = await deleteMessages(channel_id);
             return res.json({ text: responseMessage });
         }
 
+        console.log(`Full Filter Command Received: ${text}`);
 
-        console.log(`Filter command received: ${text}`);
-
+        // Send initial processing message
         await slackClient.chat.postMessage({
             channel: channel_id,
             text: `Fetching Filtered Report....`
         });
 
-        // Parse the command arguments
-        const args = text.trim().split(/\s+/);
-        let userMention, startDate, endDate, status;
+        // Advanced parsing with multiple strategies
+        const parseCommand = (commandText) => {
+            const parsedData = {
+                userMention: null,
+                startDate: null,
+                endDate: null,
+                status: null
+            };
 
-        for (const arg of args) {
-            if (arg.startsWith('@')) {
-                userMention = arg.substring(1); // Remove the @ symbol
-            } else if (arg.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                if (!startDate) {
-                    startDate = arg;
-                } else {
-                    endDate = arg;
-                }
-            } else if (['In Progress', 'Completed'].includes(arg)) {
-                status = arg;
+            // Regex for different components
+            const userRegex = /@(\w+)/;
+            const dateRegex = /(\d{4}-\d{2}-\d{2})/g;
+            const statusRegex = /\b(In Progress|Completed)\b/;
+
+            // Extract user mention
+            const userMatch = commandText.match(userRegex);
+            if (userMatch) {
+                parsedData.userMention = userMatch[1];
             }
-        }
 
-        // If we have a username mention, we need to find the corresponding user ID
-        let userId;
+            // Extract dates
+            const dateMatches = commandText.match(dateRegex);
+            if (dateMatches) {
+                if (dateMatches.length === 1) {
+                    parsedData.startDate = dateMatches[0];
+                } else if (dateMatches.length >= 2) {
+                    parsedData.startDate = dateMatches[0];
+                    parsedData.endDate = dateMatches[1];
+                }
+            }
+
+            // Extract status
+            const statusMatch = commandText.match(statusRegex);
+            if (statusMatch) {
+                parsedData.status = statusMatch[1];
+            }
+
+            return parsedData;
+        };
+
+        // Parse the command
+        const { userMention, startDate, endDate, status } = parseCommand(text);
+
+        console.log('Parsed Command Details:', { userMention, startDate, endDate, status });
+
+        // Find user ID if user mention exists
+        let userId = null;
         if (userMention) {
             try {
-                // This assumes you have a function or method to look up user ID by name
-                // You might need to implement this with Slack API
                 const userInfo = await getUserIdFromName(userMention);
                 userId = userInfo.id;
             } catch (error) {
@@ -60,17 +86,28 @@ async function handleFiltersCommand(req, res) {
             }
         }
 
+        // Construct dynamic query
         const query = {};
+        
+        // Add userId to query if exists
         if (userId) query.createdBy = userId;
+
+        // Add date range to query
         if (startDate || endDate) {
             query.createdAt = {};
             if (startDate) query.createdAt.$gte = new Date(startDate);
             if (endDate) query.createdAt.$lte = new Date(endDate + 'T23:59:59');
         }
+
+        // Add status to query
         if (status) query.status = status;
 
+        console.log('Final Query:', query);
+
+        // Fetch tasks based on query
         const tasks = await Task.find(query).sort({ createdAt: -1 });
 
+        // Handle no tasks found
         if (tasks.length === 0) {
             await slackClient.chat.postMessage({
                 channel: channel_id,
@@ -79,6 +116,7 @@ async function handleFiltersCommand(req, res) {
             return res.status(200).send();
         }
 
+        // Generate and upload report
         const reportPath = await generateFilteredReport(tasks);
 
         await slackClient.files.uploadV2({
@@ -89,7 +127,9 @@ async function handleFiltersCommand(req, res) {
             initial_comment: `Here is your filtered tasks report. Found ${tasks.length} tasks matching your criteria.`
         });
 
+        // Clean up report file after 1 minute
         setTimeout(() => fs.unlinkSync(reportPath), 60000);
+
         res.status(200).send();
 
     } catch (err) {
@@ -127,7 +167,7 @@ async function deleteMessages(channelId) {
         // Fetch messages in the channel
         const result = await slackClient.conversations.history({
             channel: channelId,
-            limit: 100, // Adjust as needed
+            limit: 15, // Adjust as needed
         });
 
         const messages = result.messages;
