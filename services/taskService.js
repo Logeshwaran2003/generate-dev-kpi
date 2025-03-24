@@ -69,7 +69,7 @@ async function processTaskUpdate(event, username) {
  * @param {string} taskName - Name of the task to complete
  * @returns {Promise<Object>} - Completed task with related updates and defects
  */
-async function completeTask(taskName) {
+async function completeTask(taskName, defectIDs) {
     const task = await Task.findOne({ taskName });
     
     if (!task || !task.createdBy) {
@@ -80,6 +80,12 @@ async function completeTask(taskName) {
     task.status = "Completed";
     task.completedAt = new Date();
     await task.save();
+
+    // Update defect status to "Completed" for the given defectIDs
+    await Defect.updateMany(
+        { defectId: { $in: defectIDs } }, 
+        { $set: { status: "Completed" } }
+    );
     
     // Get all updates and defects for this task
     const updates = await Update.find({ taskId: task._id }).sort({ timestamp: 1 });

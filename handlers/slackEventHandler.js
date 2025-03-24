@@ -14,8 +14,8 @@ async function handleMessage(event) {
     if (!event.text || !event.channel || event.subtype === 'bot_message') return;
     console.log("Received event:", JSON.stringify(event, null, 2));
 
-    if (event.text.toLowerCase().includes('dev build')) {
-        console.log(`Dev build message received from ${event.user}: ${event.text}`);
+    if (event.text.toLowerCase().includes('dev build') || event.text.toLowerCase().includes('development build')) {
+        console.log(`Build message received from ${event.user}: ${event.text}`);
         await handleDevBuild(event);
     }
 }
@@ -55,7 +55,7 @@ async function handleDevBuild(event) {
         // Check for validation completion
         if (event.text.toLowerCase().includes("validation completed working fine")) {
             console.log(`Validation completed message received from ${event.user}: ${event.text}`);
-            await handleValidationCompleted(event);
+            await handleValidationCompleted(event, defectIDs);
         }
     } catch (err) {
         console.error("Error processing dev build message:", err);
@@ -70,7 +70,7 @@ async function handleDevBuild(event) {
  * Handle validation completed messages
  * @param {Object} event - Slack event object
  */
-async function handleValidationCompleted(event) {
+async function handleValidationCompleted(event, defectIDs) {
     try {
         const taskName = messageParser.extractTaskName(event.text);
 
@@ -83,7 +83,7 @@ async function handleValidationCompleted(event) {
         }
 
         // Complete the task and get related data
-        const { task, updates, defects } = await taskService.completeTask(taskName);
+        const { task, updates, defects } = await taskService.completeTask(taskName, defectIDs);
         
         // Generate basic DOCX Report
         const docPath = await documentService.generateTaskReport(task, updates, defects);

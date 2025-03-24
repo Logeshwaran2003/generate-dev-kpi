@@ -60,7 +60,7 @@ function createFallbackAnalytics(taskContent) {
     return {
         labels: ["Updates", "Defects", "Cycle Time (days)"],
         values: [
-            taskContent.updates.length,
+            taskContent.updates.length / 2,
             taskContent.defects.length,
             typeof taskContent.cycleTime === 'number' ? taskContent.cycleTime : 0
         ],
